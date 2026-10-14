@@ -1,4 +1,4 @@
-# --- BEGIN SOURCE: BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/templete.py ---
+# --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/templete.py ---
 from __future__ import annotations
 
 import sys
@@ -13,4 +13,4 @@ sys.setrecursionlimit(10**9)
 IS_ATCODER = bool(int(__import__("os").getenv("ATCODER", "0")))
 _readline, debug = sys.stdin.readline, (lambda *args: None) if IS_ATCODER else (lambda *args: __import__("devtools").debug(*args))
 input, getint, getints = lambda: _readline().rstrip("\n"), lambda: int(_readline()), lambda: list(map(int, _readline().split()))
-# --- END SOURCE: BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/templete.py ---
+# --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/templete.py ---
