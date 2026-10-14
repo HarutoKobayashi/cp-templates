@@ -1,4 +1,4 @@
-// --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/all-in-one.cpp ---
+// --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/cpp/all-in-one.cpp ---
 #ifdef DEFINED_ONLY_IN_LOCAL
 #include <atcoder/modint>
 #include <cpp-dump/cpp-dump.hpp>
@@ -1659,7 +1659,7 @@ class StaticRectangleFillRectangleSum {
         return ans;
     }
 };
-// --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/all-in-one.cpp ---
+// --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/cpp/all-in-one.cpp ---
 
 /* memo */
 // ll composition(ll f, ll g) {return f+g;} // f \circ g
@@ -1673,9 +1673,4 @@ int main() {
     ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
     cout << fixed << setprecision(15);
-
-    getints(N);
-    vector<ll> A(N);
-    getvec(A);
-    print(A);
 }
