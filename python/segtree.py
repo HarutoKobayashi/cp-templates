@@ -1,8 +1,9 @@
 # --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/segtree.py ---
 
-## 参考 ##
-# https://atcoder.github.io/ac-library/master/document_ja/segtree.html
-# https://github.com/not522/ac-library-python
+# Based on:
+# https://github.com/not522/ac-library-python/blob/master/atcoder/segtree.py
+# https://github.com/atcoder/ac-library/blob/master/document_ja/segtree.md
+# License: CC0-1.0
 
 from typing import Any, Callable, Union
 
