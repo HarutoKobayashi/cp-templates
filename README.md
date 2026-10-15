@@ -1,4 +1,4 @@
-# cp-templetes
+# cp-templates
 
 ## C++ (`cpp/`)
 
