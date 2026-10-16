@@ -1,0 +1,74 @@
+target-version = "py313"
+line-length = 320
+
+include = [
+    "*.py",
+    "*.pyi",
+    "*.pyw",
+    "*.ipynb",
+]
+
+lint.ignore = [
+    "A001",    # 関数名がビルトインと被る
+    "A002",    # 引数名がビルトインと被る
+    "ANN001",  # 引数の型アノテーション省略
+    "ANN002",  # *args の型アノテーション省略
+    "ANN003",  # **kwargs の型アノテーション省略
+    "ANN201",  # public 関数の戻り値型省略
+    "ANN202",  # private 関数の戻り値型省略
+    "ANN204",  # 特殊メソッドの戻り値型省略
+    "ANN401",  # Any 型の使用禁止
+    "ARG005",  # lambda 式で使用しない変数がある
+    "B007",    # ループ変数が本体で未使用
+    "BLE",     # 素の except 捕捉
+    "C408",    # dict()/list() をリテラルに書き換え
+    "C90",     # 循環的複雑度チェック
+    "COM",     # 末尾カンマ
+    "D",       # docstring 全般
+    "E401",    # 1行に複数 import
+    "E402",    # import がファイル先頭にない
+    "E501",    # 行が長すぎる
+    "E731",    # lambda を変数に代入
+    "E741",    # 紛らわしい変数名 (l, O, I)
+    "EM",      # 例外メッセージに文字列リテラル直書き
+    "ERA",     # コメントアウトされたコード
+    "EXE",     # 実行可能ファイルのパーミッション
+    "F401",    # 未使用 import
+    "FBT",     # bool 型の位置引数 (bool trap)
+    "G004",    # logging に f-string 使用
+    "ICN",     # import エイリアスの命名規則
+    "I001",    # import の sort
+    "INP001",  # __init__.py のない namespace パッケージ
+    "ISC",     # 文字列の暗黙連結
+    "N",       # 命名規則 (PEP8)
+    "PERF401", # リスト内包表記への書き換え
+    "PGH003",  # type: ignore にコード指定なし
+    "PLC0415", # import がトップレベルにない (Pylint)
+    "PLR",     # Pylint リファクタ系
+    "PLR2004", # マジックナンバーとの比較
+    "PLW1641", # __eq__ 定義で __hash__ なし
+    "PT",      # pytest スタイル
+    "PTH",     # os.path の代わりに pathlib を使え
+    "RET",     # return 文の書き方
+    "RSE",     # raise 文の書き方
+    "RUF001",  # 文字列中の紛らわしい Unicode
+    "RUF002",  # docstring 中の紛らわしい Unicode
+    "RUF003",  # コメント中の紛らわしい Unicode
+    "S",       # セキュリティ (bandit)
+    "SIM",     # コードの簡略化提案
+    "SLF",     # private メンバーへの外部アクセス
+    "T20",     # print 文
+    "TCH",     # TYPE_CHECKING ブロックへの移動
+    "TRY",     # 例外処理のスタイル
+    "UP035",   # 非推奨 import (旧 typing など)
+    "UP038",   # isinstance に Union 型使用
+]
+
+lint.select = ["ALL"]
+
+[lint.pyupgrade]
+# https://beta.ruff.rs/docs/settings/#keep-runtime-typing
+keep-runtime-typing = true
+
+[lint.pylint]
+max-args = 10

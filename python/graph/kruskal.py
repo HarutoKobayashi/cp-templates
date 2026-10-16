@@ -1,4 +1,4 @@
-# --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/kraskal.py ---
+# --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/kruskal.py ---
 
 
 def kruskal(graph: list[list[tuple[int, int]]]) -> tuple[int, list[tuple[int, int, int]]]:
@@ -36,4 +36,4 @@ def kruskal(graph: list[list[tuple[int, int]]]) -> tuple[int, list[tuple[int, in
     return total_cost, mst_edges
 
 
-# --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/kraskal.py ---
+# --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/kruskal.py ---

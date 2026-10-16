@@ -15,7 +15,7 @@
 
 | ファイル | 内容 |
 | --- | --- |
-| [`templete.py`](python/templete.py) | 共通ヘッダ（入力まわりの関数、よく使うライブラリのインポートなど） |
+| [`template.py`](python/templete.py) | 共通ヘッダ（入力まわりの関数、よく使うライブラリのインポートなど） |
 
 ### データ構造
 
@@ -46,10 +46,10 @@
 | ファイル | 内容 |
 | --- | --- |
 | [`dijkstra.py`](python/graph/dijkstra.py) | ダイクストラ法（最短路） |
-| [`kraskal.py`](python/graph/kraskal.py) | クラスカル法（最小全域木） |
+| [`kruskal.py`](python/graph/kruskal.py) | クラスカル法（最小全域木） |
 | [`warshall-floyd.py`](python/graph/warshall-floyd.py) | ワーシャル–フロイド法（最短路） |
 | [`three-color.py`](python/graph/three-color.py) | 深さ優先探索（三色法）による有向グラフのサイクル検出 |
-| [`tree-toporogical-sort.py`](python/graph/tree-toporogical-sort.py) | 木のトポロジカルソート |
+| [`tree-topological-sort.py`](python/graph/tree-topological-sort.py) | 木のトポロジカルソート |
 
 ### その他
 

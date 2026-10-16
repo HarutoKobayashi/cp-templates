@@ -1,4 +1,4 @@
-# --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/tree-toporogical-sort.py ---
+# --- BEGIN SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/tree-topological-sort.py ---
 
 
 def tree_order(root: int, graph: list[list[int]]) -> tuple[list[int], list[int]]:
@@ -21,4 +21,4 @@ def tree_order(root: int, graph: list[list[int]]) -> tuple[list[int], list[int]]
     return order, parent
 
 
-# --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/tree-toporogical-sort.py ---
+# --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/python/graph/tree-topological-sort.py ---
