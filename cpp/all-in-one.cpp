@@ -44,6 +44,7 @@ using namespace std;
 #define all(x) (x).begin(), (x).end()
 #define rall(x) (x).rbegin(), (x).rend()
 #define elif else if
+#define ld long double
 #define ll long long
 #define pb push_back
 #define mp make_pair
@@ -1659,6 +1660,34 @@ class StaticRectangleFillRectangleSum {
         return ans;
     }
 };
+
+bool arg_sort(array<ll, 2> A, array<ll, 2> B) {
+            auto [ax, ay] = A;
+            auto [bx, by] = B;
+
+            ll ha, hb;
+            if (ay > 0 or (ay == 0 and ax > 0)) ha = 0;
+            else ha = 1;
+            if (by > 0 or (by == 0 and bx > 0)) hb = 0;
+            else hb = 1;
+
+            if (ha != hb) {
+                return ha < hb;
+            }
+            auto cross = ax * by - ay * bx;
+            if (cross != 0) {
+                return cross > 0;
+            }
+
+            auto na = ax * ax + ay * ay;
+            auto nb = bx * bx + by * by;
+
+            if (na != nb) {
+                return na < nb;
+            }
+            return false;
+};
+
 // --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/cpp/all-in-one.cpp ---
 
 /* memo */
@@ -1668,6 +1697,7 @@ class StaticRectangleFillRectangleSum {
 // Comb<mint> C(2 * power(10, 6) + 30ll);
 // CoordinateCompression<ll> cc(A); // A は unique でなくても、unsorted でもよい
 // cc.encode / cc.decode
+
 
 int main() {
     ios::sync_with_stdio(false);
