@@ -974,6 +974,184 @@ euler_tour_lca(int n, const vector<vector<int>> &graph, int root = 0) {
     return {tour, first, dep};
 }
 
+namespace euler_tour_detail {
+
+struct index {
+    int n, root;
+    vector<int> order, tin, tout, par, dep, size;
+
+    template <class I>
+    index(const vector<vector<I>>& graph, int root)
+        : n((int)graph.size()), root(root), tin(n, -1), tout(n),
+          par(n, -1), dep(n), size(n, 1) {
+        assert(n > 0 && 0 <= root && root < n);
+        order.reserve(n);
+        vector<int> st = {root};
+
+        while (!st.empty()) {
+            int v = st.back();
+            st.pop_back();
+            tin[v] = (int)order.size();
+            order.push_back(v);
+
+            for (auto it = graph[v].rbegin(); it != graph[v].rend(); ++it) {
+                int u = (int)*it;
+                assert(0 <= u && u < n);
+                if (u == par[v]) continue;
+                assert(u != root && par[u] == -1);
+
+                par[u] = v;
+                dep[u] = dep[v] + 1;
+                st.push_back(u);
+            }
+        }
+        assert((int)order.size() == n);
+
+        for (int i = n - 1; i >= 0; --i) {
+            int v = order[i];
+            if (par[v] != -1) size[par[v]] += size[v];
+        }
+        for (int v = 0; v < n; ++v) {
+            tout[v] = tin[v] + size[v];
+        }
+    }
+
+    pair<int, int> subtree_range(int v) const {
+        return {tin[v], tout[v]};
+    }
+};
+
+template <class S>
+vector<S> reorder(const vector<S>& a, const vector<int>& order) {
+    assert(a.size() == order.size());
+    vector<S> b;
+    b.reserve(a.size());
+    for (int v : order) b.push_back(a[v]);
+    return b;
+}
+
+} // namespace euler_tour_detail
+
+/**
+ * @brief Euler Tour + Segment Tree
+ *
+ * 初期配列 a[v] は頂点番号順。
+ * get/set は頂点番号を指定する。
+ **/
+template <class S, S (*op)(S, S), S (*e)()>
+struct euler_tour_segtree : euler_tour_detail::index {
+    atcoder::segtree<S, op, e> seg;
+
+    template <class I>
+    euler_tour_segtree(const vector<vector<I>>& graph, int N, int root)
+        : euler_tour_detail::index(graph, root), seg(N) {
+        assert(N == n);
+    }
+
+    template <class I>
+    euler_tour_segtree(const vector<vector<I>>& graph, const vector<S>& a, int root)
+        : euler_tour_detail::index(graph, root),
+          seg(euler_tour_detail::reorder(a, order)) {}
+
+    // 頂点操作
+    void set(int v, S x) { seg.set(tin[v], x); }
+    S get(int v) const { return seg.get(tin[v]); }
+
+    // Euler Tour 上の区間操作
+    S prod(int l, int r) const { return seg.prod(l, r); }
+    S all_prod() const { return seg.all_prod(); }
+
+    // 部分木操作
+    S subtree_prod(int v) const {
+        return seg.prod(tin[v], tout[v]);
+    }
+
+    template <bool (*g)(S)>
+    int max_right(int l) const {
+        return seg.template max_right<g>(l);
+    }
+    template <class G>
+    int max_right(int l, G g) const {
+        return seg.max_right(l, g);
+    }
+
+    template <bool (*g)(S)>
+    int min_left(int r) const {
+        return seg.template min_left<g>(r);
+    }
+    template <class G>
+    int min_left(int r, G g) const {
+        return seg.min_left(r, g);
+    }
+};
+
+/**
+ * @brief Euler Tour + Lazy Segment Tree
+ *
+ * 初期配列 a[v] は頂点番号順。
+ * get/set/apply(v,f) は頂点番号を指定する。
+ * prod(l,r)/apply(l,r,f) は Euler Tour 上の区間。
+ **/
+template <class S, S (*op)(S, S), S (*e)(),
+          class F, S (*mapping)(F, S),
+          F (*composition)(F, F), F (*id)()>
+struct euler_tour_lazy_segtree : euler_tour_detail::index {
+    atcoder::lazy_segtree<S, op, e, F, mapping, composition, id> seg;
+
+    template <class I>
+    euler_tour_lazy_segtree(const vector<vector<I>>& graph, int N, int root)
+        : euler_tour_detail::index(graph, root), seg(N) {
+        assert(N == n);
+    }
+
+    template <class I>
+    euler_tour_lazy_segtree(const vector<vector<I>>& graph, const vector<S>& a, int root)
+        : euler_tour_detail::index(graph, root),
+          seg(euler_tour_detail::reorder(a, order)) {}
+
+    // 頂点操作
+    void set(int v, S x) { seg.set(tin[v], x); }
+    S get(int v) { return seg.get(tin[v]); }
+
+    // Euler Tour 上の区間操作
+    S prod(int l, int r) { return seg.prod(l, r); }
+    S all_prod() const { return seg.all_prod(); }
+
+    void apply(int v, F f) {
+        seg.apply(tin[v], f);
+    }
+    void apply(int l, int r, F f) {
+        seg.apply(l, r, f);
+    }
+
+    // 部分木操作
+    S subtree_prod(int v) {
+        return seg.prod(tin[v], tout[v]);
+    }
+    void subtree_apply(int v, F f) {
+        seg.apply(tin[v], tout[v], f);
+    }
+
+    template <bool (*g)(S)>
+    int max_right(int l) {
+        return seg.template max_right<g>(l);
+    }
+    template <class G>
+    int max_right(int l, G g) {
+        return seg.max_right(l, g);
+    }
+
+    template <bool (*g)(S)>
+    int min_left(int r) {
+        return seg.template min_left<g>(r);
+    }
+    template <class G>
+    int min_left(int r, G g) {
+        return seg.min_left(r, g);
+    }
+};
+
+
 // grid utils
 vector<pair<int, int>> move4 = {
     {0, 1},
@@ -2213,53 +2391,4 @@ int main() {
     ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
     cout << fixed << setprecision(15);
-
-    getints(N, M);
-    vector<array<ll,3>> edges(M); for (int i: range(M)) {getints(u, v, w); u--; v--; edges[i] = {u, v, w};}
-
-    ll mst_cost = 0;
-    vector<array<ll, 3>> mst_edges;
-    vector<array<ll, 3>> non_mst_edges;
-    {
-        atcoder::dsu uf(N);
-        sort(all(edges), [](array<ll, 3> A, array<ll, 3> B) -> bool {return A[2] < B[2];});
-        for (auto [u, v, w]: edges) {
-            if (uf.same(u, v)) {non_mst_edges.pb({u, v, w}); continue;}
-            uf.merge(u, v);
-            mst_edges.pb({u, v, w});
-            mst_cost += w;
-        }
-    }
-
-    vector<vector<int>> graph(N);
-    for (auto [u, v, w]: mst_edges) {graph[u].pb(v); graph[v].pb(u);}
-
-    auto op = [](ll a, ll b) -> ll {return min<ll>(a, b);};
-    auto e = []() -> ll {return inf;};
-    auto mapping = [](ll f, ll x) -> ll {return min<ll>(f, x);};
-    auto composition = [](ll f, ll g) -> ll {return min<ll>(f, g);};
-    auto id = []() -> ll {return inf;};
-
-    vector<ll> arr(N, inf);
-    hld_lazy_segtree<ll,op,e,ll,mapping,composition,id> st(graph, arr, 0);
-    for (auto [u, v, w]: non_mst_edges) st.apply_path(u, v, w, true);
-
-    ll ans = 0;
-    {
-        vector<vector<array<ll,2>>> graph2(N); for (auto [u, v, w]: mst_edges) {graph2[u].pb({v, w}); graph2[v].pb({u, w});}
-        dq<ll> q;
-        vector<bool> visited(N, false);
-        visited[0] = true; q.append(0);
-        while (not q.empty()) {
-            auto cur = q.pop();
-            for (auto [nex, cost]: graph2[cur]) {
-                if (visited[nex]) continue;
-                chmax(ans, mst_cost + st.get(nex) - cost);
-                visited[nex] = true;
-                q.appendleft(nex);
-            }
-        }
-    }
-    if (ans >= inf) kill(-1);
-    print(ans);
 }
