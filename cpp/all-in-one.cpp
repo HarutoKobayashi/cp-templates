@@ -1688,6 +1688,516 @@ bool arg_sort(array<ll, 2> A, array<ll, 2> B) {
             return false;
 };
 
+template <typename G>
+struct HeavyLightDecomposition {
+ private:
+  void dfs_sz(int v) {
+    size[v] = 1;
+    int heavy = -1;
+
+    for (int i = 0; i < (int)g[v].size(); ++i) {
+      int to = (int)g[v][i];
+      if (to == par[v]) continue;
+      par[to] = v;
+      depth[to] = depth[v] + 1;
+
+      dfs_sz(to);
+      size[v] += size[to];
+
+      if (heavy == -1 ||
+          size[to] > size[(int)g[v][heavy]]) {
+        heavy = i;
+      }
+    }
+
+    if (heavy != -1) {
+      swap(g[v][0], g[v][heavy]);
+    }
+  }
+
+  void dfs_hld(int v) {
+    down[v] = id++;
+
+    for (int i = 0; i < (int)g[v].size(); ++i) {
+      int to = (int)g[v][i];
+      if (to == par[v]) continue;
+
+      nxt[to] = (i == 0 ? nxt[v] : to);
+      dfs_hld(to);
+    }
+
+    up[v] = id;
+  }
+
+  vector<pair<int, int>> ascend(int u, int v) const {
+    vector<pair<int, int>> res;
+
+    while (nxt[u] != nxt[v]) {
+      res.emplace_back(down[u], down[nxt[u]]);
+      u = par[nxt[u]];
+    }
+
+    if (u != v) {
+      res.emplace_back(down[u], down[v] + 1);
+    }
+
+    return res;
+  }
+
+  vector<pair<int, int>> descend(int u, int v) const {
+    vector<pair<int, int>> res;
+
+    while (nxt[u] != nxt[v]) {
+      res.emplace_back(down[nxt[v]], down[v]);
+      v = par[nxt[v]];
+    }
+
+    if (u != v) {
+      res.emplace_back(down[u] + 1, down[v]);
+    }
+
+    reverse(res.begin(), res.end());
+    return res;
+  }
+
+ public:
+  G& g;
+  int root, id;
+  vector<int> size, depth, down, up, nxt, par;
+
+  explicit HeavyLightDecomposition(G& graph, int _root = 0)
+      : g(graph),
+        root(_root),
+        id(0),
+        size(g.size(), 0),
+        depth(g.size(), 0),
+        down(g.size(), -1),
+        up(g.size(), -1),
+        nxt(g.size(), root),
+        par(g.size(), root) {
+    dfs_sz(root);
+    dfs_hld(root);
+  }
+
+  pair<int, int> idx(int v) const {
+    return {down[v], up[v]};
+  }
+
+  template <typename F>
+  void path_query(int u, int v, bool vertex,
+                  const F& f) const {
+    int w = lca(u, v);
+
+    for (auto [a, b] : ascend(u, w)) {
+      f(min(a + 1, b), max(a + 1, b));
+    }
+
+    if (vertex) {
+      f(down[w], down[w] + 1);
+    }
+
+    for (auto [a, b] : descend(w, v)) {
+      f(a, b + 1);
+    }
+  }
+
+  template <typename F>
+  void path_noncommutative_query(
+      int u, int v, bool vertex, const F& f) const {
+    int w = lca(u, v);
+
+    for (auto [a, b] : ascend(u, w)) {
+      f(a + 1, b);
+    }
+
+    if (vertex) {
+      f(down[w], down[w] + 1);
+    }
+
+    for (auto [a, b] : descend(w, v)) {
+      f(a, b + 1);
+    }
+  }
+
+  template <typename F>
+  void subtree_query(int v, bool vertex,
+                     const F& f) const {
+    f(down[v] + int(!vertex), up[v]);
+  }
+
+  int lca(int a, int b) const {
+    while (nxt[a] != nxt[b]) {
+      if (depth[nxt[a]] < depth[nxt[b]]) {
+        swap(a, b);
+      }
+      a = par[nxt[a]];
+    }
+
+    return depth[a] < depth[b] ? a : b;
+  }
+
+  int dist(int a, int b) const {
+    return depth[a] + depth[b] - 2 * depth[lca(a, b)];
+  }
+};
+
+struct hld_index {
+  int n, timer = 0;
+  vector<int> parent, depth, sz, heavy, head, in, out;
+  template<class G>
+  hld_index(const G& g, int root)
+      : n(static_cast<int>(g.size())), parent(n, -1), depth(n), sz(n),
+        heavy(n, -1), head(n), in(n), out(n) {
+    assert(0 <= root && root < n);
+    dfs_size(g, root, -1);
+    dfs_hld(g, root, root);
+  }
+
+ private:
+  template<class G>
+  void dfs_size(const G& g, int v, int p) {
+    parent[v] = p;
+    sz[v] = 1;
+    for (const auto& to : g[v]) {
+      const int u = static_cast<int>(to);
+      if (u == p) continue;
+      depth[u] = depth[v] + 1;
+      dfs_size(g, u, v);
+      sz[v] += sz[u];
+      if (heavy[v] == -1 || sz[u] > sz[heavy[v]])
+        heavy[v] = u;
+    }
+  }
+
+  template<class G>
+  void dfs_hld(const G& g, int v, int h) {
+    head[v] = h;
+    in[v] = timer++;
+    if (heavy[v] != -1) dfs_hld(g, heavy[v], h);
+    for (const auto& to : g[v]) {
+      const int u = static_cast<int>(to);
+      if (u != parent[v] && u != heavy[v])
+        dfs_hld(g, u, u);
+    }
+    out[v] = timer;
+  }
+
+ public:
+  template<class S>
+  vector<S> reorder(const vector<S>& a,
+                    bool reverse) const {
+    assert((int)a.size() == n);
+    vector<S> b = a;
+    for (int v = 0; v < n; ++v)
+      b[reverse ? n - 1 - in[v] : in[v]] = a[v];
+    return b;
+  }
+
+  template<class Func>
+  void for_each_path(int u, int v, bool edge, Func f) const {
+    while (head[u] != head[v]) {
+      if (depth[head[u]] < depth[head[v]]) swap(u, v);
+      f(in[head[u]], in[u] + 1);
+      u = parent[head[u]];
+    }
+    if (depth[u] > depth[v]) swap(u, v);
+    int l = in[u] + int(edge), r = in[v] + 1;
+    if (l < r) f(l, r);
+  }
+
+  pair<int, int> subtree_range(int v,
+                                bool edge) const {
+    return {in[v] + int(edge), out[v]};
+  }
+
+  int lca(int u, int v) const {
+    while (head[u] != head[v]) {
+      if (depth[head[u]] < depth[head[v]]) swap(u, v);
+      u = parent[head[u]];
+    }
+    return depth[u] < depth[v] ? u : v;
+  }
+
+  int dist(int u, int v) const {
+    return depth[u] + depth[v] - 2 * depth[lca(u, v)];
+  }
+};
+
+namespace hld_detail {
+template<class S, S(*op)(S, S), S(*e)(), class Seg>
+S prod_path(const hld_index& h, Seg& st, Seg& rev,
+            int u, int v, bool edge) {
+  S left = e(), right = e();
+
+  while (h.head[u] != h.head[v]) {
+    if (h.depth[h.head[u]] >= h.depth[h.head[v]]) {
+      int l = h.in[h.head[u]], r = h.in[u] + 1;
+      left = op(left, rev.prod(h.n - r, h.n - l));
+      u = h.parent[h.head[u]];
+    } else {
+      int l = h.in[h.head[v]], r = h.in[v] + 1;
+      right = op(st.prod(l, r), right);
+      v = h.parent[h.head[v]];
+    }
+  }
+
+  if (h.depth[u] >= h.depth[v]) {
+    int l = h.in[v] + int(edge), r = h.in[u] + 1;
+    if (l < r)
+      left = op(left, rev.prod(h.n - r, h.n - l));
+  } else {
+    int l = h.in[u] + int(edge), r = h.in[v] + 1;
+    if (l < r)
+      right = op(st.prod(l, r), right);
+  }
+
+  return op(left, right);
+}
+
+}  // namespace hld_detail
+
+/**
+ * @brief HL 分解 + atcoder::segtree
+ *
+ * @tparam S 値の型
+ * @tparam op 結合演算 S(S, S)
+ * @tparam e 単位元 S()
+ *
+ * @note
+ * - a[v] は頂点 v の初期値。
+ * - edge=false は頂点、edge=true は辺を対象にする。
+ * - 辺の値は根付き木の子頂点に対応させる。
+ *
+ * @par 計算量
+ * - 構築: O(N)
+ * - 頂点更新: O(log N)
+ * - パス取得: O(log^2 N)
+ * - 部分木取得: O(log N)
+ * - 空間: O(N)
+ */
+template<class S, S(*op)(S, S), S(*e)()>
+struct hld_segtree {
+  hld_index hld;
+  atcoder::segtree<S, op, e> st, rev;
+
+  /**
+   * @brief 木と初期値から構築する。
+   * @param g 木の隣接リスト
+   * @param a 頂点番号順の初期値配列
+   * @param root 根の頂点番号
+   * @par 計算量 O(N)
+   */
+  template<class G>
+  hld_segtree(const G& g, const vector<S>& a, int root)
+      : hld(g, root),
+        st(hld.reorder(a, false)),
+        rev(hld.reorder(a, true)) {}
+
+  /**
+   * @brief 木と頂点数 N から構築する（全頂点の初期値は e()）。
+   * @param g 木の隣接リスト
+   * @param N 頂点数（正の整数、g.size() と一致させる）
+   * @param root 根の頂点番号
+   * @par 計算量 O(N)
+   */
+  template<class G>
+  hld_segtree(const G& g, int N, int root)
+      : hld(g, root), st(N), rev(N) {
+    assert(N > 0 && N == hld.n);
+  }
+
+  /**
+   * @brief 頂点 v の値を x に変更する。
+   * @par 計算量 O(log N)
+   */
+  void set(int v, S x) {
+    st.set(hld.in[v], x);
+    rev.set(hld.n - 1 - hld.in[v], x);
+  }
+
+  /**
+   * @brief 頂点 v の値を取得する。
+   * @par 計算量 O(1)
+   */
+  S get(int v) {
+    return st.get(hld.in[v]);
+  }
+
+  /**
+   * @brief u -> v のパスの積を求める。
+   * @param edge true なら辺クエリ、false なら頂点クエリ
+   * @return パス上の値を u -> v の順番に結合した結果
+   * @note u == v かつ edge=true なら単位元を返す。
+   * @par 計算量 O(log^2 N)
+   */
+  S prod_path(int u, int v, bool edge) {
+    return hld_detail::prod_path<S, op, e>(
+        hld, st, rev, u, v, edge);
+  }
+
+  /**
+   * @brief v を根とする部分木の積を求める。
+   * @param edge true なら v と親を結ぶ辺を除く。
+   * @note 非可換演算では HLD の DFS 順で結合される。
+   * @par 計算量 O(log N)
+   */
+  S prod_subtree(int v, bool edge) {
+    auto [l, r] = hld.subtree_range(v, edge);
+    return st.prod(l, r);
+  }
+
+  /** @brief 最近共通祖先を求める。O(log N) */
+  int lca(int u, int v) const {
+    return hld.lca(u, v);
+  }
+
+  /** @brief 頂点間の距離（辺数）を求める。O(log N) */
+  int dist(int u, int v) const {
+    return hld.dist(u, v);
+  }
+};
+
+/**
+ * @brief HL 分解 + atcoder::lazy_segtree
+ *
+ * @tparam S 値の型
+ * @tparam op 結合演算 S(S, S)
+ * @tparam e 単位元 S()
+ * @tparam F 作用の型
+ * @tparam mapping 作用の適用 S(F, S)
+ * @tparam composition 作用の合成 F(F, F)
+ * @tparam id 恒等作用 F()
+ *
+ * @note
+ * - a[v] は頂点 v の初期値。
+ * - composition の順序は ACL と同じ。
+ * - 辺の値は子頂点に対応させる。root は e() に初期化すれば良い。
+ *
+ * @par 計算量
+ * - 構築: O(N)
+ * - 頂点操作: O(log N)
+ * - パス操作: O(log^2 N)
+ * - 部分木操作: O(log N)
+ * - 空間: O(N)
+ */
+template<class S, S(*op)(S, S), S(*e)(),
+         class F, S(*mapping)(F, S),
+         F(*composition)(F, F), F(*id)()>
+struct hld_lazy_segtree {
+  hld_index hld;
+  using seg_type =
+      atcoder::lazy_segtree<S, op, e, F,
+                            mapping, composition, id>;
+  seg_type st, rev;
+
+  /**
+   * @brief 木と初期値から構築する。
+   * @param g 木の隣接リスト
+   * @param a 頂点番号順の初期値配列
+   * @param root 根の頂点番号
+   * @par 計算量 O(N)
+   */
+  template<class G>
+  hld_lazy_segtree(const G& g, const vector<S>& a, int root)
+      : hld(g, root),
+        st(hld.reorder(a, false)),
+        rev(hld.reorder(a, true)) {}
+
+  /**
+   * @brief 木と頂点数 N から構築する（全頂点の初期値は e()）。
+   * @param g 木の隣接リスト
+   * @param N 頂点数（正の整数、g.size() と一致させる）
+   * @param root 根の頂点番号
+   * @par 計算量 O(N)
+   */
+  template<class G>
+  hld_lazy_segtree(const G& g, int N, int root)
+      : hld(g, root), st(N), rev(N) {
+    assert(N > 0 && N == hld.n);
+  }
+
+  /**
+   * @brief 頂点 v の値を x に変更する。
+   * @par 計算量 O(log N)
+   */
+  void set(int v, S x) {
+    st.set(hld.in[v], x);
+    rev.set(hld.n - 1 - hld.in[v], x);
+  }
+
+  /**
+   * @brief 頂点 v の値を取得する。
+   * @par 計算量 O(log N)
+   */
+  S get(int v) {
+    return st.get(hld.in[v]);
+  }
+
+  /**
+   * @brief 頂点 v に作用 f を適用する。
+   * @par 計算量 O(log N)
+   */
+  void apply(int v, F f) {
+    st.apply(hld.in[v], f);
+    rev.apply(hld.n - 1 - hld.in[v], f);
+  }
+
+  /**
+   * @brief u -> v のパスの積を求める。
+   * @param edge true なら辺、false なら頂点を対象にする。
+   * @note 非可換演算にも対応する。
+   * @par 計算量 O(log^2 N)
+   */
+  S prod_path(int u, int v, bool edge) {
+    return hld_detail::prod_path<S, op, e>(
+        hld, st, rev, u, v, edge);
+  }
+
+  /**
+   * @brief v を根とする部分木の積を求める。
+   * @param edge true なら v と親を結ぶ辺を除く。
+   * @par 計算量 O(log N)
+   */
+  S prod_subtree(int v, bool edge) {
+    auto [l, r] = hld.subtree_range(v, edge);
+    return st.prod(l, r);
+  }
+
+  /**
+   * @brief u-v パス上の各頂点または辺に f を適用する。
+   * @param edge true なら辺、false なら頂点を対象にする。
+   * @par 計算量 O(log^2 N)
+   */
+  void apply_path(int u, int v, F f, bool edge) {
+    hld.for_each_path(u, v, edge, [&](int l, int r) {
+      st.apply(l, r, f);
+      rev.apply(hld.n - r, hld.n - l, f);
+    });
+  }
+
+  /**
+   * @brief v を根とする部分木に f を適用する。
+   * @param edge true なら v と親を結ぶ辺を除く。
+   * @par 計算量 O(log N)
+   */
+  void apply_subtree(int v, F f, bool edge) {
+    auto [l, r] = hld.subtree_range(v, edge);
+    st.apply(l, r, f);
+    rev.apply(hld.n - r, hld.n - l, f);
+  }
+
+  /** @brief 最近共通祖先を求める。O(log N) */
+  int lca(int u, int v) const {
+    return hld.lca(u, v);
+  }
+
+  /** @brief 頂点間の距離（辺数）を求める。O(log N) */
+  int dist(int u, int v) const {
+    return hld.dist(u, v);
+  }
+};
+
+
 // --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/cpp/all-in-one.cpp ---
 
 /* memo */
@@ -1703,4 +2213,53 @@ int main() {
     ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
     cout << fixed << setprecision(15);
+
+    getints(N, M);
+    vector<array<ll,3>> edges(M); for (int i: range(M)) {getints(u, v, w); u--; v--; edges[i] = {u, v, w};}
+
+    ll mst_cost = 0;
+    vector<array<ll, 3>> mst_edges;
+    vector<array<ll, 3>> non_mst_edges;
+    {
+        atcoder::dsu uf(N);
+        sort(all(edges), [](array<ll, 3> A, array<ll, 3> B) -> bool {return A[2] < B[2];});
+        for (auto [u, v, w]: edges) {
+            if (uf.same(u, v)) {non_mst_edges.pb({u, v, w}); continue;}
+            uf.merge(u, v);
+            mst_edges.pb({u, v, w});
+            mst_cost += w;
+        }
+    }
+
+    vector<vector<int>> graph(N);
+    for (auto [u, v, w]: mst_edges) {graph[u].pb(v); graph[v].pb(u);}
+
+    auto op = [](ll a, ll b) -> ll {return min<ll>(a, b);};
+    auto e = []() -> ll {return inf;};
+    auto mapping = [](ll f, ll x) -> ll {return min<ll>(f, x);};
+    auto composition = [](ll f, ll g) -> ll {return min<ll>(f, g);};
+    auto id = []() -> ll {return inf;};
+
+    vector<ll> arr(N, inf);
+    hld_lazy_segtree<ll,op,e,ll,mapping,composition,id> st(graph, arr, 0);
+    for (auto [u, v, w]: non_mst_edges) st.apply_path(u, v, w, true);
+
+    ll ans = 0;
+    {
+        vector<vector<array<ll,2>>> graph2(N); for (auto [u, v, w]: mst_edges) {graph2[u].pb({v, w}); graph2[v].pb({u, w});}
+        dq<ll> q;
+        vector<bool> visited(N, false);
+        visited[0] = true; q.append(0);
+        while (not q.empty()) {
+            auto cur = q.pop();
+            for (auto [nex, cost]: graph2[cur]) {
+                if (visited[nex]) continue;
+                chmax(ans, mst_cost + st.get(nex) - cost);
+                visited[nex] = true;
+                q.appendleft(nex);
+            }
+        }
+    }
+    if (ans >= inf) kill(-1);
+    print(ans);
 }
