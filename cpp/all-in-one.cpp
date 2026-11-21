@@ -217,10 +217,15 @@ ll capped_lcm(ll a, ll b, ll Y = inf) {
 
 ll cdiv(ll a, ll b) {
     ll q = a / b;
-    if (a % b != 0 && ((a < 0) == (b < 0)))
-        ++q;
+    if (a % b != 0 && ((a < 0) == (b < 0))) ++q;
     return q;
 }
+ll fdiv(ll a, ll b) {
+    ll q = a / b;
+    if ((a % b != 0) && ((a < 0) != (b < 0))) q--;
+    return q;
+}
+
 // power
 template <class T> struct is_modint : false_type {};
 template <int m> struct is_modint<atcoder::static_modint<m>> : true_type {};
@@ -2375,6 +2380,110 @@ struct hld_lazy_segtree {
   }
 };
 
+namespace matrix_detail {
+template <class T> T plus_(T a, T b) { return a + b; }
+template <class T> T times_(T a, T b) { return a * b; }
+template <class T> T zero_() { return T(0); }
+template <class T> T one_() { return T(1); }
+}  // namespace matrix_detail
+
+template <class T,
+          T (*add)(T, T) = matrix_detail::plus_<T>,
+          T (*zero)() = matrix_detail::zero_<T>,
+          T (*mul)(T, T) = matrix_detail::times_<T>,
+          T (*one)() = matrix_detail::one_<T>>
+struct Matrix {
+    int h = 0, w = 0;
+    std::vector<T> d;  // 1 次元で持つ (キャッシュ効率)
+
+    Matrix() = default;
+    Matrix(int h_, int w_) : h(h_), w(w_), d((size_t)h_ * w_, zero()) {}
+    Matrix(int h_, int w_, const T& v) : h(h_), w(w_), d((size_t)h_ * w_, v) {}
+    Matrix(const std::vector<std::vector<T>>& v) {
+        h = v.size();
+        w = h ? v[0].size() : 0;
+        d.reserve((size_t)h * w);
+        for (auto& row : v) {
+            assert((int)row.size() == w);
+            d.insert(d.end(), row.begin(), row.end());
+        }
+    }
+    Matrix(std::initializer_list<std::initializer_list<T>> v)
+        : Matrix(std::vector<std::vector<T>>(v.begin(), v.end())) {}
+
+    static Matrix identity(int n) {
+        Matrix r(n, n);
+        for (int i = 0; i < n; i++) r(i, i) = one();
+        return r;
+    }
+
+    T& operator()(int i, int j) { return d[(size_t)i * w + j]; }
+    const T& operator()(int i, int j) const { return d[(size_t)i * w + j]; }
+    T* operator[](int i) { return d.data() + (size_t)i * w; }               // A[i][j]
+    const T* operator[](int i) const { return d.data() + (size_t)i * w; }
+
+    Matrix& operator+=(const Matrix& o) {
+        assert(h == o.h && w == o.w);
+        for (size_t i = 0; i < d.size(); i++) d[i] = add(d[i], o.d[i]);
+        return *this;
+    }
+    friend Matrix operator+(Matrix a, const Matrix& b) { return a += b; }
+
+    friend Matrix operator*(const Matrix& a, const Matrix& b) {
+        assert(a.w == b.h);
+        Matrix c(a.h, b.w);
+        const T z = zero();
+        for (int i = 0; i < a.h; i++) {
+            T* ci = c[i];
+            for (int k = 0; k < a.w; k++) {
+                const T aik = a(i, k);
+                if (aik == z) continue;  // zero は零元なので飛ばしてよい
+                const T* bk = b[k];
+                for (int j = 0; j < b.w; j++) ci[j] = add(ci[j], mul(aik, bk[j]));
+            }
+        }
+        return c;
+    }
+    Matrix& operator*=(const Matrix& o) { return *this = *this * o; }
+
+    // 行列 × 列ベクトル
+    friend std::vector<T> operator*(const Matrix& a, const std::vector<T>& x) {
+        assert(a.w == (int)x.size());
+        std::vector<T> y(a.h, zero());
+        for (int i = 0; i < a.h; i++)
+            for (int j = 0; j < a.w; j++) y[i] = add(y[i], mul(a(i, j), x[j]));
+        return y;
+    }
+
+    Matrix pow(long long e) const {
+        assert(h == w && e >= 0);
+        Matrix r = identity(h), b = *this;
+        while (e) {
+            if (e & 1) r *= b;
+            if (e >>= 1) b *= b;  // 最後の無駄な二乗を避ける (ll のオーバーフロー対策)
+        }
+        return r;
+    }
+
+    Matrix transpose() const {
+        Matrix r(w, h);
+        for (int i = 0; i < h; i++)
+            for (int j = 0; j < w; j++) r(j, i) = (*this)(i, j);
+        return r;
+    }
+
+    std::vector<std::vector<T>> to_vv() const {
+        std::vector<std::vector<T>> v(h, std::vector<T>(w));
+        for (int i = 0; i < h; i++)
+            for (int j = 0; j < w; j++) v[i][j] = (*this)(i, j);
+        return v;
+    }
+
+    friend bool operator==(const Matrix& a, const Matrix& b) {
+        return a.h == b.h && a.w == b.w && a.d == b.d;
+    }
+    friend bool operator!=(const Matrix& a, const Matrix& b) { return !(a == b); }
+};
 
 // --- END SOURCE: https://github.com/HarutoKobayashi/cp-templates/cpp/all-in-one.cpp ---
 
@@ -2387,8 +2496,10 @@ struct hld_lazy_segtree {
 // cc.encode / cc.decode
 
 
+
 int main() {
     ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
     cout << fixed << setprecision(15);
 }
+
